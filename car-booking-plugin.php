@@ -47,3 +47,10 @@ function remove_hello_theme_style() {
     wp_dequeue_style('hello-elementor'); // ชื่อ handle ของ style.css ของ Hello Theme
     wp_deregister_style('hello-elementor');
 }
+
+add_action('template_redirect', function () {
+    if (isset($_GET['car_booking_confirm']) && $_GET['car_booking_confirm'] == 1) {
+        echo cbp_render_booking_confirm();
+        exit;
+    }
+});

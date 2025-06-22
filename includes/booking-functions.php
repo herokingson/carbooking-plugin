@@ -149,7 +149,13 @@ function cbp_render_booking_confirm()
         // ส่งอีเมลแจ้งเตือน
         cbp_send_booking_email($email, $start, $end);
 
-        return '<div class="text-center p-6 text-green-600"><h2 class="text-xl font-bold">จองรถเรียบร้อยแล้ว! กรุณาตรวจสอบอีเมลของคุณ</h2></div>';
+        return '
+        <div class="p-6 text-center text-green-700 bg-green-50 rounded-lg shadow-md">
+            ✅ การจองของคุณสำเร็จแล้ว!<br>
+            📅 วันที่เดินทาง: ' . esc_html(date('d/m/Y H:i', strtotime($start))) . '<br>
+            📧 อีเมลยืนยันส่งไปที่: ' . esc_html($email) . '<br>
+            🚗 หมายเลขรถ: ' . intval($_GET['vehicle_id']) . '
+        </div>';
     }
 
     return '<div class="text-center p-6 text-red-600">กรุณาเข้าสู่ระบบเพื่อทำการจอง</div>';
