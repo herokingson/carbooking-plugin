@@ -24,6 +24,7 @@ add_action('init', 'cbp_register_shortcodes');
 
 function cbp_enqueue_assets() {
     wp_enqueue_style('cbp-tailwind', 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+    wp_enqueue_style('icon-font', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
     wp_enqueue_style('cbp-style', plugins_url('dist/css/app.css', __FILE__));
 }
 add_action('wp_enqueue_scripts', 'cbp_enqueue_assets');
@@ -40,3 +41,9 @@ function cbp_admin_enqueue_assets($hook) {
 }
 add_action('admin_enqueue_scripts', 'cbp_admin_enqueue_assets');
 // ... Remaining logic already covered ...
+
+add_action('wp_enqueue_scripts', 'remove_hello_theme_style', 20);
+function remove_hello_theme_style() {
+    wp_dequeue_style('hello-elementor'); // ชื่อ handle ของ style.css ของ Hello Theme
+    wp_deregister_style('hello-elementor');
+}
