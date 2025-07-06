@@ -13,7 +13,8 @@ function car_booking_create_tables() {
     dbDelta("CREATE TABLE $vehicles (
         id BIGINT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255),
-        detail TEXT
+        detail TEXT,
+        image_id BIGINT UNSIGNED
     ) $charset_collate;");
 
     // ตารางเส้นทาง

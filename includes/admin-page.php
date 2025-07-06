@@ -15,7 +15,8 @@ function cbp_admin_page()
     if (isset($_POST['action_type']) && $_POST['action_type'] === 'add_vehicle') {
         $wpdb->insert($vehicles, [
             'name' => sanitize_text_field($_POST['vehicle_name']),
-            'detail' => sanitize_text_field($_POST['vehicle_detail'])
+            'detail' => sanitize_text_field($_POST['vehicle_detail']),
+            'image_id' => isset($_POST['vehicle_image']) ? intval($_POST['vehicle_image']) : null
         ]);
         echo '<div class="notice notice-success"><p>เพิ่มรถเรียบร้อยแล้ว</p></div>';
     }
@@ -67,6 +68,15 @@ function cbp_admin_page()
     echo '<input type="hidden" name="action_type" value="add_vehicle">';
     echo '<input name="vehicle_name" placeholder="ชื่อรถ" required class="w-full border p-2 rounded">';
     echo '<textarea name="vehicle_detail" placeholder="รายละเอียดรถ" class="w-full border p-2 rounded"></textarea>';
+
+    // 🎯 เพิ่มส่วนอัปโหลดรูปภาพรถ
+    echo '<div>';
+    echo '<label class="block mb-2 font-medium">รูปภาพรถ</label>';
+    echo '<input type="hidden" name="vehicle_image" id="vehicle_image">';
+    echo '<button type="button" class="button bg-gray-200 px-3 py-1 rounded car_image_upload_button">เลือกรูปภาพ</button>';
+    echo '<div class="car_image_preview mt-2"></div>';
+    echo '</div>';
+
     echo '<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">เพิ่มรถ</button>';
     echo '</form>';
     echo '</div>';
@@ -95,10 +105,26 @@ function cbp_admin_page()
         echo '<table class="w-full border text-left"><thead><tr class="bg-gray-100">
             <th class="p-2 border">ชื่อรถ</th>
             <th class="p-2 border">รายละเอียด</th>
+            <th class="p-2 border">รูปภาพ</th>
         </tr></thead><tbody>';
+       echo '<pre>',var_dump($vehicle_list),'</pre>';
         foreach ($vehicle_list as $v) {
-            echo '<tr><td class="p-2 border">' . esc_html($v->name) . '</td>
-                  <td class="p-2 border">' . esc_html($v->detail) . '</td></tr>';
+            echo '<tr>';
+            echo '<td class="p-2 border">' . esc_html($v->name) . '</td>';
+            echo '<td class="p-2 border">' . esc_html($v->detail) . '</td>';
+    
+            if (!empty($v->image_id)) {
+                $image_url = wp_get_attachment_url($v->image_id);
+                if ($image_url) {
+                    echo '<td class="p-2 border"><img src="' . esc_url($image_url) . '" style="max-width:100px;"></td>';
+                } else {
+                    echo '<td class="p-2 border text-center text-gray-400">-</td>';
+                }
+            } else {
+                echo '<td class="p-2 border text-center text-gray-400">-</td>';
+            }
+    
+            echo '</tr>';
         }
         echo '</tbody></table>';
     } else {

@@ -92,7 +92,7 @@ function cbp_render_search_form()
                 'start_time' => $_GET['start_time'],
             ], site_url('/?car_booking_confirm=1'));
 
-            echo '<div class="mt-6 border p-4 rounded shadow bg-white">';
+            echo '<div class="mt-6 border p-4 shadow bg-white rounded-md">';
             echo '🚗 <strong>' . esc_html($vehicle->name) . '</strong><br>';
             echo '📍 เส้นทาง: ' . esc_html($from) . ' → ' . esc_html($to) . '<br>';
             echo '<a href="' . esc_url($link) . '" class="inline-block mt-2 text-blue-600 hover:underline">จองรถคันนี้</a>';

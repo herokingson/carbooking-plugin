@@ -37,7 +37,9 @@ function cbp_admin_enqueue_assets($hook) {
     wp_enqueue_style('cbp-tailwind', 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
 
     // โหลด style.css เพิ่มถ้ามี
-    wp_enqueue_style('cbp-style', plugins_url('assets/css/style.css', __FILE__));
+    // wp_enqueue_style('cbp-style', plugins_url('assets/scss/app.scss', __FILE__));
+
+    
 }
 add_action('admin_enqueue_scripts', 'cbp_admin_enqueue_assets');
 // ... Remaining logic already covered ...
@@ -54,3 +56,11 @@ add_action('template_redirect', function () {
         exit;
     }
 });
+
+add_action('admin_enqueue_scripts', 'carbooking_admin_scripts');
+function carbooking_admin_scripts($hook) {
+    wp_enqueue_media();
+    // โหลด app.js เพิ่มถ้ามี
+    wp_enqueue_script('carbooking-admin', plugins_url('assets/js/app.js', __FILE__));
+    // wp_enqueue_script('carbooking-admin', plugin_dir_url(__FILE__) . 'admin.js', array('jquery'), null, true);
+}
