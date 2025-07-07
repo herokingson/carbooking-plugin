@@ -132,14 +132,14 @@ function cbp_admin_page()
             <th class="p-2 border">รูปภาพ</th>
             <th class="p-2 border">ลบ</th>
         </tr></thead><tbody>';
-        
+
         foreach ($vehicle_list as $v) {
             echo '<tr>';
             echo '<td class="p-2 border">' . esc_html($v->name) . '</td>';
             echo '<td class="p-2 border">' . esc_html($v->engine) . '</td>';
             echo '<td class="p-2 border">' . esc_html($v->seat) . '</td>';
             echo '<td class="p-2 border">' . esc_html($v->bag) . '</td>';
-    
+
             if (!empty($v->image_id)) {
                 $image_url = wp_get_attachment_url($v->image_id);
                 if ($image_url) {
@@ -259,13 +259,12 @@ function cbp_admin_page()
     echo '<h2 class="text-xl font-semibold mb-4">💰 รายการราคารถตามเส้นทาง</h2>';
 
     if ($pricing_list) {
-        echo '<table class="w-full text-left border">';
+        echo '<table class="w-full text-center border">';
         echo '<thead class="bg-gray-100"><tr>
         <th class="p-2 border">ชื่อรถ</th>
         <th class="p-2 border">ต้นทาง</th>
         <th class="p-2 border">ปลายทาง</th>
         <th class="p-2 border">ราคา (บาท)</th>
-        <th class="p-2 border">สถานะ</th>
          <th class="p-2 border text-center">ลบ</th>
     </tr></thead><tbody>';
 
@@ -275,13 +274,6 @@ function cbp_admin_page()
             echo '<td class="p-2 border">' . esc_html($item->from_location) . '</td>';
             echo '<td class="p-2 border">' . esc_html($item->to_location) . '</td>';
             echo '<td class="p-2 border text-right">' . number_format($item->price, 2) . '</td>';
-            echo '<td class="p-2 border text-center">';
-            if ($item->booking_count > 0) {
-                echo '<span class="text-green-600 font-semibold">ถูกจองเรียบร้อย</span>';
-            } else {
-                echo '<span class="text-gray-500">ไม่มีการจอง</span>';
-            }
-            echo '</td>';
             echo '<td class="p-2 border text-center">
                 <a href="?page=cbp-admin&delete_vehicle_route=' . intval($item->id) . '" 
                 onclick="return confirm(\'ยืนยันการลบราคานี้?\')" 
@@ -296,4 +288,75 @@ function cbp_admin_page()
 
     echo '</div>';
     echo '</div>';
+
+    // === ตารางแสดง Booking ทั้งหมด ===
+    echo '<div class="w-full bg-gray-50 p-6 mt-8 rounded shadow">';
+    echo '<h2 class="text-xl font-semibold mb-4">📅 รายการจองทั้งหมด</h2>';
+
+    $bookings_table = $wpdb->prefix . 'bookings';
+    $vehicles_table = $wpdb->prefix . 'vehicles';
+    $routes_table = $wpdb->prefix . 'routes';
+
+    // การลบ booking
+    if (isset($_GET['delete_booking'])) {
+        $delete_id = intval($_GET['delete_booking']);
+        $wpdb->delete($bookings_table, ['id' => $delete_id]);
+        echo '<div class="notice notice-success"><p>ลบการจองเรียบร้อยแล้ว</p></div>';
+    }
+
+    // การอัปเดตสถานะ
+    if (isset($_GET['booking_id'], $_GET['update_status'])) {
+        $booking_id = intval($_GET['booking_id']);
+        $new_status = sanitize_text_field($_GET['update_status']);
+        $wpdb->update($bookings_table, ['status' => $new_status], ['id' => $booking_id]);
+        echo '<div class="notice notice-success"><p>อัปเดตสถานะเรียบร้อยแล้ว</p></div>';
+    }
+
+    $bookings = $wpdb->get_results("
+    SELECT b.*, v.name AS vehicle_name, r.from_location, r.to_location
+    FROM $bookings_table b
+    LEFT JOIN $vehicles_table v ON b.vehicle_id = v.id
+    LEFT JOIN $routes_table r ON b.route_id = r.id
+    ORDER BY b.start_time DESC
+");
+
+    if ($bookings) {
+        echo '<table class="w-full border text-sm text-left">';
+        echo '<thead class="bg-gray-100"><tr>
+        <th class="p-2 border">ID</th>
+        <th class="p-2 border">รถ</th>
+        <th class="p-2 border">เส้นทาง</th>
+        <th class="p-2 border">ผู้ใช้</th>
+        <th class="p-2 border">เริ่มต้น</th>
+        <th class="p-2 border">สิ้นสุด</th>
+        <th class="p-2 border">สถานะ</th>
+        <th class="p-2 border text-center">การจัดการ</th>
+    </tr></thead><tbody>';
+
+        $i = 0;
+        foreach ($bookings as $b) {
+            $i = $i + 1;
+            echo '<tr>';
+            echo '<td class="p-2 border">' . intval($i) . '</td>';
+            echo '<td class="p-2 border">' . esc_html($b->vehicle_name) . '</td>';
+            echo '<td class="p-2 border">' . esc_html($b->from_location . ' → ' . $b->to_location) . '</td>';
+            echo '<td class="p-2 border">' . esc_html($b->user_email) . '</td>';
+            echo '<td class="p-2 border">' . date('d/m/Y H:i', strtotime($b->start_time)) . '</td>';
+            echo '<td class="p-2 border">' . date('d/m/Y H:i', strtotime($b->end_time)) . '</td>';
+            echo '<td class="p-2 border">' . esc_html($b->status) . '</td>';
+            echo '<td class="p-2 border text-center">
+            <a href="?page=cbp-admin&booking_id=' . $b->id . '&update_status=confirmed" class="text-blue-600 hover:underline">ยืนยัน</a> |
+            <a href="?page=cbp-admin&booking_id=' . $b->id . '&update_status=canceled" class="text-yellow-600 hover:underline">ยกเลิก</a> |
+            <a href="?page=cbp-admin&delete_booking=' . $b->id . '" onclick="return confirm(\'คุณแน่ใจหรือไม่ว่าจะลบการจองนี้?\')" class="text-red-600 hover:underline">ลบ</a>
+            </td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+    } else {
+        echo '<p class="text-gray-500">ยังไม่มีการจองใด ๆ</p>';
+    }
+
+    echo '</div>'; // ปิด div รายการ booking
+
 }

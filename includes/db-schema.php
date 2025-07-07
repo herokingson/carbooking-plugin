@@ -1,5 +1,6 @@
 <?php
-function car_booking_create_tables() {
+function car_booking_create_tables()
+{
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
     $vehicles = $wpdb->prefix . 'vehicles';
@@ -43,6 +44,12 @@ function car_booking_create_tables() {
         start_time DATETIME,
         end_time DATETIME,
         user_email VARCHAR(255),
+        full_name VARCHAR(255),
+        country VARCHAR(100),
+        phone VARCHAR(50),
+        whatsapp VARCHAR(50),
+        wechat VARCHAR(50),
+        line VARCHAR(50),
         status ENUM('pending','confirmed','cancelled') DEFAULT 'pending'
     ) $charset_collate;");
 }
