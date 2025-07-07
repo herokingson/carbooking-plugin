@@ -13,7 +13,9 @@ function car_booking_create_tables() {
     dbDelta("CREATE TABLE $vehicles (
         id BIGINT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255),
-        detail TEXT,
+        engine TEXT,
+        seat TEXT,
+        bag TEXT,
         image_id BIGINT UNSIGNED
     ) $charset_collate;");
 

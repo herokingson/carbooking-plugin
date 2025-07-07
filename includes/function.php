@@ -33,29 +33,3 @@ function get_available_vehicles($from, $to, $desired_time) {
 
     return $available_vehicles;
 }
-
-
-function cbp_render_search_form() {
-    ob_start();
-    ?>
-    <form method="get">
-        <input type="text" name="from" placeholder="ต้นทาง" required>
-        <input type="text" name="to" placeholder="ปลายทาง" required>
-        <input type="datetime-local" name="start_time" required>
-        <button type="submit">ค้นหารถว่าง</button>
-    </form>
-    <?php
-    if (!empty($_GET['from']) && !empty($_GET['to']) && !empty($_GET['start_time'])) {
-        $vehicles = get_available_vehicles($_GET['from'], $_GET['to'], $_GET['start_time']);
-        if (!empty($vehicles)) {
-            echo '<ul>';
-            foreach ($vehicles as $v) {
-                echo '<li>' . esc_html($v->name) . ' - ' . esc_html($v->detail) . '</li>';
-            }
-            echo '</ul>';
-        } else {
-            echo '<p>ไม่พบรถว่างในช่วงเวลานี้</p>';
-        }
-    }
-    return ob_get_clean();
-}

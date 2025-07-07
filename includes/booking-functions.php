@@ -68,36 +68,70 @@ function cbp_render_search_form()
             return;
         }
 
-        $already_booked = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}bookings
+        $vehicle_routes_table = $wpdb->prefix . 'vehicle_routes';
+        $vehicles_table = $wpdb->prefix . 'vehicles';
+
+        echo '<div class="grid md:grid-cols-2 gap-6 mt-6">';
+
+        foreach ($vehicles as $vehicle) {
+            $already_booked = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}bookings
+             WHERE vehicle_id = %d AND route_id = %d
+             AND ((start_time <= %s AND end_time >= %s)
+             OR (start_time <= %s AND end_time >= %s))
+             AND status = 'confirmed'",
+                $vehicle->id,
+                $route_id,
+                $start,
+                $start,
+                $end,
+                $end
+            ));
+
+            // 🔎 ดึงราคา
+            $price = $wpdb->get_var($wpdb->prepare(
+                "SELECT price FROM {$wpdb->prefix}vehicle_routes 
+         WHERE vehicle_id = %d AND route_id = %d",
+                $vehicle->id,
+                $route_id
+            ));
+            if ($price === null) {
+                continue; // ❌ ข้ามคันนี้ถ้าไม่มีราคาใน vehicle_routes
+            }
+
+            $already_booked = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}bookings
          WHERE vehicle_id = %d AND route_id = %d
          AND ((start_time <= %s AND end_time >= %s) OR (start_time <= %s AND end_time >= %s))
          AND status = 'confirmed'",
-            $vehicle_id,
-            $route_id,
-            $start,
-            $start,
-            $end,
-            $end
-        ));
+                $vehicle_id,
+                $route_id,
+                $start,
+                $start,
+                $end,
+                $end
+            ));
+            echo '<div class="border p-4 bg-white rounded shadow-sm">';
+            echo '<h3 class="text-lg font-semibold mb-1">🚗 ' . esc_html($vehicle->name) . '</h3>';
+            echo '<p>📍 เส้นทาง: ' . esc_html($from . ' → ' . $to) . '</p>';
+            echo '<p>💰 ราคา: ' . ($price !== null ? number_format($price, 2) . ' บาท' : '<span class="text-gray-400">ไม่ระบุ</span>') . '</p>';
 
-        if ($already_booked > 0) {
-            echo '<p class="text-red-600 mt-4">❌ รถคันนี้ถูกจองในช่วงเวลาดังกล่าว</p>';
-        } else {
-            // แสดงรายละเอียดรถและลิงก์จอง
-            $vehicle = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}vehicles WHERE id = %d", $vehicle_id));
-            $link = add_query_arg([
-                'vehicle_id' => $vehicle_id,
-                'route_id' => $route_id,
-                'start_time' => $_GET['start_time'],
-            ], site_url('/?car_booking_confirm=1'));
+            if ($already_booked > 0) {
+                echo '<p class="mt-2 text-red-600">❌ รถคันนี้ถูกจองแล้ว</p>';
+            } else {
+                $link = add_query_arg([
+                    'vehicle_id' => $vehicle->id,
+                    'route_id' => $route_id,
+                    'start_time' => $_GET['start_time'],
+                ], site_url('/?car_booking_confirm=1'));
 
-            echo '<div class="mt-6 border p-4 shadow bg-white rounded-md">';
-            echo '🚗 <strong>' . esc_html($vehicle->name) . '</strong><br>';
-            echo '📍 เส้นทาง: ' . esc_html($from) . ' → ' . esc_html($to) . '<br>';
-            echo '<a href="' . esc_url($link) . '" class="inline-block mt-2 text-blue-600 hover:underline">จองรถคันนี้</a>';
+                echo '<a href="' . esc_url($link) . '" class="mt-2 inline-block text-blue-600 hover:underline">✅ จองรถคันนี้</a>';
+            }
+
             echo '</div>';
         }
+
+        echo '</div>';
     }
     return ob_get_clean();
 }

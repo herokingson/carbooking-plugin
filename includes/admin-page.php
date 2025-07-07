@@ -15,7 +15,9 @@ function cbp_admin_page()
     if (isset($_POST['action_type']) && $_POST['action_type'] === 'add_vehicle') {
         $wpdb->insert($vehicles, [
             'name' => sanitize_text_field($_POST['vehicle_name']),
-            'detail' => sanitize_text_field($_POST['vehicle_detail']),
+            'engine' => sanitize_text_field($_POST['vehicle_engine']),
+            'seat' => sanitize_text_field($_POST['vehicle_seat']),
+            'bag' => sanitize_text_field($_POST['vehicle_bag']),
             'image_id' => isset($_POST['vehicle_image']) ? intval($_POST['vehicle_image']) : null
         ]);
         echo '<div class="notice notice-success"><p>เพิ่มรถเรียบร้อยแล้ว</p></div>';
@@ -31,9 +33,9 @@ function cbp_admin_page()
     }
 
     if (isset($_POST['action_type']) && $_POST['action_type'] === 'add_vehicle_route') {
-        $vehicle_id = intval($_POST['vehicle_id']);
-        $route_id = intval($_POST['route_id']);
-        $price = floatval($_POST['price']);
+        $vehicle_id = intval($_POST['vehicle_id']) ? $_POST['vehicle_id'] : null;
+        $route_id = intval($_POST['route_id']) ? $_POST['route_id'] : null;
+        $price = floatval($_POST['price']) ? $_POST['price'] : null;
 
         $table = $wpdb->prefix . 'vehicle_routes';
 
@@ -56,6 +58,24 @@ function cbp_admin_page()
         }
     }
 
+    if (isset($_GET['delete_vehicle'])) {
+        $vehicle_id = intval($_GET['delete_vehicle']);
+        $wpdb->delete($vehicles, ['id' => $vehicle_id]);
+        echo '<div class="notice notice-success"><p>ลบรถเรียบร้อยแล้ว</p></div>';
+    }
+
+    if (isset($_GET['delete_route'])) {
+        $route_id = intval($_GET['delete_route']);
+        $wpdb->delete($routes, ['id' => $route_id]);
+        echo '<div class="notice notice-success"><p>ลบเส้นทางเดินรถเรียบร้อยแล้ว</p></div>';
+    }
+
+    if (isset($_GET['delete_vehicle_route'])) {
+        $delete_id = intval($_GET['delete_vehicle_route']);
+        $vehicle_routes_table = $wpdb->prefix . 'vehicle_routes';
+        $wpdb->delete($vehicle_routes_table, ['id' => $delete_id]);
+        echo '<div class="notice notice-success"><p>ลบราคาตามเส้นทางเรียบร้อยแล้ว</p></div>';
+    }
 
     echo '<div class="wrap">';
     echo '<h1 class="text-2xl font-bold mb-4">จัดการระบบจองรถ</h1>';
@@ -67,7 +87,9 @@ function cbp_admin_page()
     echo '<form method="post" class="space-y-4">';
     echo '<input type="hidden" name="action_type" value="add_vehicle">';
     echo '<input name="vehicle_name" placeholder="ชื่อรถ" required class="w-full border p-2 rounded">';
-    echo '<textarea name="vehicle_detail" placeholder="รายละเอียดรถ" class="w-full border p-2 rounded"></textarea>';
+    echo '<input name="vehicle_engine" placeholder="ชื่อเครื่องยนต์" required class="w-full border p-2 rounded">';
+    echo '<input name="vehicle_seat" placeholder="ที่นั่ง" required class="w-full border p-2 rounded">';
+    echo '<input name="vehicle_bag" placeholder="กระเป๋า" required class="w-full border p-2 rounded">';
 
     // 🎯 เพิ่มส่วนอัปโหลดรูปภาพรถ
     echo '<div>';
@@ -77,7 +99,7 @@ function cbp_admin_page()
     echo '<div class="car_image_preview mt-2"></div>';
     echo '</div>';
 
-    echo '<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">เพิ่มรถ</button>';
+    echo '<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded w-full">เพิ่มรถ</button>';
     echo '</form>';
     echo '</div>';
 
@@ -88,7 +110,7 @@ function cbp_admin_page()
     echo '<input type="hidden" name="action_type" value="add_route">';
     echo '<input name="from_location" placeholder="ต้นทาง" required class="w-full border p-2 rounded">';
     echo '<input name="to_location" placeholder="ปลายทาง" required class="w-full border p-2 rounded">';
-    echo '<button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">เพิ่มเส้นทาง</button>';
+    echo '<button type="submit" class="bg-green-600 text-white px-4 py-2 rounded w-full">เพิ่มเส้นทาง</button>';
     echo '</form>';
     echo '</div>';
 
@@ -104,14 +126,19 @@ function cbp_admin_page()
     if ($vehicle_list) {
         echo '<table class="w-full border text-left"><thead><tr class="bg-gray-100">
             <th class="p-2 border">ชื่อรถ</th>
-            <th class="p-2 border">รายละเอียด</th>
+            <th class="p-2 border">เครื่องยนต์</th>
+            <th class="p-2 border">ที่นั่ง</th>
+            <th class="p-2 border">กระเป๋า</th>
             <th class="p-2 border">รูปภาพ</th>
+            <th class="p-2 border">ลบ</th>
         </tr></thead><tbody>';
-       echo '<pre>',var_dump($vehicle_list),'</pre>';
+        
         foreach ($vehicle_list as $v) {
             echo '<tr>';
             echo '<td class="p-2 border">' . esc_html($v->name) . '</td>';
-            echo '<td class="p-2 border">' . esc_html($v->detail) . '</td>';
+            echo '<td class="p-2 border">' . esc_html($v->engine) . '</td>';
+            echo '<td class="p-2 border">' . esc_html($v->seat) . '</td>';
+            echo '<td class="p-2 border">' . esc_html($v->bag) . '</td>';
     
             if (!empty($v->image_id)) {
                 $image_url = wp_get_attachment_url($v->image_id);
@@ -123,7 +150,12 @@ function cbp_admin_page()
             } else {
                 echo '<td class="p-2 border text-center text-gray-400">-</td>';
             }
-    
+
+            echo '<td class="p-2 border text-center">
+                <a href="?page=cbp-admin&delete_vehicle=' . intval($v->id) . '" 
+                onclick="return confirm(\'ยืนยันการลบรถ?\')" 
+                class="text-red-600 hover:underline">ลบ</a></td>';
+
             echo '</tr>';
         }
         echo '</tbody></table>';
@@ -143,10 +175,17 @@ function cbp_admin_page()
         echo '<table class="w-full border text-left"><thead><tr class="bg-gray-100">
             <th class="p-2 border">ต้นทาง</th>
             <th class="p-2 border">ปลายทาง</th>
+            <th class="p-2 border text-center">ลบ</th>
         </tr></thead><tbody>';
         foreach ($route_list as $r) {
             echo '<tr><td class="p-2 border">' . esc_html($r->from_location) . '</td>
-                  <td class="p-2 border">' . esc_html($r->to_location) . '</td></tr>';
+                  <td class="p-2 border">' . esc_html($r->to_location) . '</td>';
+            echo '<td class="p-2 border text-center">
+                <a href="?page=cbp-admin&delete_route=' . intval($r->id) . '" 
+                onclick="return confirm(\'ยืนยันการลบเส้นทางเดินรถ?\')" 
+                class="text-red-600 hover:underline">ลบ</a></td>';
+
+            echo '</tr>';
         }
         echo '</tbody></table>';
     } else {
@@ -160,8 +199,8 @@ function cbp_admin_page()
     // หลัง form เพิ่มรถ/เส้นทาง
     $vehicle_options = $wpdb->get_results("SELECT * FROM $vehicles");
     $route_options = $wpdb->get_results("SELECT * FROM $routes");
-
-    echo '<div class="bg-white p-6 rounded shadow max-w-xl mt-6">';
+    echo '<div class="flex flex-row mt-8 gap-5">';
+    echo '<div class="bg-white p-6 rounded shadow">';
     echo '<h2 class="text-xl font-semibold mb-4">กำหนดราคารถในเส้นทาง</h2>';
     echo '<form method="post" class="space-y-4">';
     echo '<input type="hidden" name="action_type" value="add_vehicle_route">';
@@ -199,14 +238,24 @@ function cbp_admin_page()
     $routes_table = $wpdb->prefix . 'routes';
 
     $pricing_list = $wpdb->get_results("
-    SELECT vr.id, vr.price, v.name AS vehicle_name, r.from_location, r.to_location
+    SELECT 
+        vr.id, 
+        vr.price, 
+        v.name AS vehicle_name, 
+        r.from_location, 
+        r.to_location,
+        (
+            SELECT COUNT(*) 
+            FROM {$wpdb->prefix}bookings b 
+            WHERE b.vehicle_id = vr.vehicle_id AND b.route_id = vr.route_id
+        ) AS booking_count
     FROM $vehicle_routes_table vr
     LEFT JOIN $vehicles_table v ON vr.vehicle_id = v.id
     LEFT JOIN $routes_table r ON vr.route_id = r.id
     ORDER BY v.name, r.from_location, r.to_location
 ");
 
-    echo '<div class="w-full bg-gray-50 p-6 mt-8 rounded shadow">';
+    echo '<div class="w-full bg-gray-50 p-6 rounded shadow">';
     echo '<h2 class="text-xl font-semibold mb-4">💰 รายการราคารถตามเส้นทาง</h2>';
 
     if ($pricing_list) {
@@ -216,6 +265,8 @@ function cbp_admin_page()
         <th class="p-2 border">ต้นทาง</th>
         <th class="p-2 border">ปลายทาง</th>
         <th class="p-2 border">ราคา (บาท)</th>
+        <th class="p-2 border">สถานะ</th>
+         <th class="p-2 border text-center">ลบ</th>
     </tr></thead><tbody>';
 
         foreach ($pricing_list as $item) {
@@ -224,6 +275,17 @@ function cbp_admin_page()
             echo '<td class="p-2 border">' . esc_html($item->from_location) . '</td>';
             echo '<td class="p-2 border">' . esc_html($item->to_location) . '</td>';
             echo '<td class="p-2 border text-right">' . number_format($item->price, 2) . '</td>';
+            echo '<td class="p-2 border text-center">';
+            if ($item->booking_count > 0) {
+                echo '<span class="text-green-600 font-semibold">ถูกจองเรียบร้อย</span>';
+            } else {
+                echo '<span class="text-gray-500">ไม่มีการจอง</span>';
+            }
+            echo '</td>';
+            echo '<td class="p-2 border text-center">
+                <a href="?page=cbp-admin&delete_vehicle_route=' . intval($item->id) . '" 
+                onclick="return confirm(\'ยืนยันการลบราคานี้?\')" 
+                class="text-red-600 hover:underline">ลบ</a></td>';
             echo '</tr>';
         }
 
@@ -232,5 +294,6 @@ function cbp_admin_page()
         echo '<p class="text-gray-500">ยังไม่มีการกำหนดราคารถสำหรับเส้นทางใด ๆ</p>';
     }
 
+    echo '</div>';
     echo '</div>';
 }
